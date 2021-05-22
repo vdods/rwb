@@ -61,11 +61,10 @@ This will create a complete build package under the `$RWB_LOCAL_BUILDS_DIR/<your
 `RWB_LOCAL_BUILDS_DIR` is defined in your project's `rwb-package-config.env` file).  The build will be a
 directory whose name is the "holoversion" of the project.  This contains:
 -   Your package name (as defined in its `Cargo.toml` file).
--   Your package's version (as defined in its `Cargo.toml` file), with a `v` prepended, e.g. `v1.2.3`.
--   A naive timestamp (does not include timezone) in format `YYYY.MM.DD.hh:mm:ss`, so that lexicographical
-    sorting does what you want.
 -   A string from `git describe`, which ideally contains a version tag, a git commit hash, a `modified`
     marker if the repo's working state is modified.
+-   A naive timestamp (does not include timezone) in format `YYYY.MM.DD.hh:mm:ss`, so that lexicographical
+    sorting does what you want.
 -   A sha256 hash of the contents of the project dir.  The current implementation of this hash doesn't
     guarantee to agree with `.gitignore`, but is only meant to capture local modifications, and therefore
     produce distinctly named builds.

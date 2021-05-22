@@ -21,22 +21,6 @@ function cargo_package_name {
     echo $PACKAGE_NAME
 }
 
-function cargo_package_version {
-    if [ $# -eq 0 ]; then
-        PACKAGE_VERSION=$(toml get Cargo.toml package.version)
-    elif [ $# -eq 1 ]; then
-        pushd $1
-        PACKAGE_VERSION=$(toml get Cargo.toml package.version)
-        popd
-    else
-        abort_with_error_message "Error: got $# arguments; expected usage: cargo_package_version [crate-root-dir]"
-    fi
-    # https://stackoverflow.com/questions/9733338/shell-script-remove-first-and-last-quote-from-a-variable
-    PACKAGE_VERSION="${PACKAGE_VERSION%\"}"
-    PACKAGE_VERSION="${PACKAGE_VERSION#\"}"
-    echo $PACKAGE_VERSION
-}
-
 function rwb_version {
     echo "0.0.0"
 }

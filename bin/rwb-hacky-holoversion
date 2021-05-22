@@ -7,12 +7,11 @@ RWB_SCRIPT_DIR=$(dirname $0)
 . ./rwb-package-config.env
 
 PACKAGE_NAME=$(cargo_package_name)
-VERSION=$(cargo_package_version)
 
 DATE=$(date +%Y.%m.%d.%H:%M:%S)
-GIT_DESCRIBE=$(git describe --all --long --dirty=.modified | egrep -o "[^/]*$" | tr '-' '.')
+GIT_DESCRIBE=$(git describe --all --long --dirty=-modified | egrep -o "[^/]*$")
 
-HOLOVERSION=$PACKAGE_NAME-v$VERSION-$DATE-$GIT_DESCRIBE
+HOLOVERSION=$PACKAGE_NAME-$GIT_DESCRIBE-$DATE
 
 # Add a hash of the content if the git repo has been modified.
 # 0 means true, nonzero means false (shell script convention).
