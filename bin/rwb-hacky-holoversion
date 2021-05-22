@@ -1,0 +1,32 @@
+#!/bin/bash -eu
+
+RWB_SCRIPT_DIR=$(dirname $0)
+. $RWB_SCRIPT_DIR/rwb-functions
+
+# This sets the package- and deployment-specific env vars
+. ./rwb-package-config.env
+
+PACKAGE_NAME=$(cargo_package_name)
+VERSION=$(cargo_package_version)
+
+DATE=$(date +%Y.%m.%d.%H:%M:%S)
+GIT_DESCRIBE=$(git describe --all --long --dirty=.modified | egrep -o "[^/]*$" | tr '-' '.')
+
+HOLOVERSION=$PACKAGE_NAME-v$VERSION-$DATE-$GIT_DESCRIBE
+
+# Add a hash of the content if the git repo has been modified.
+# 0 means true, nonzero means false (shell script convention).
+IS_MODIFIED=$(echo $GIT_DESCRIBE | fgrep ".modified" | echo "$?")
+if [ $IS_MODIFIED -eq 0 ]; then
+    # Use the hash.
+    # Just take the hex encoded hash value, not the file name.
+    if [ "$(echo $RWB_CRATE_IS_INSIDE_CARGO_WORKSPACE | tr '[:upper:]' '[:lower:]')" = "true" ]; then
+        # Note that ../Cargo.lock is included so that any updates to workspace dependencies affect the hash.
+        HASH=$(tar c --exclude=.git --exclude=$RWB_LOCAL_BUILDS_DIR --exclude=$RWB_GENERATED_SOURCE_PATH . ../Cargo.lock | sha256sum | egrep -o "^[a-fA-F0-9]*")
+    else
+        HASH=$(tar c --exclude=.git --exclude=$RWB_LOCAL_BUILDS_DIR --exclude=$RWB_GENERATED_SOURCE_PATH . | sha256sum | egrep -o "^[a-fA-F0-9]*")
+    fi
+    HOLOVERSION=$HOLOVERSION-$HASH
+fi
+
+echo $HOLOVERSION

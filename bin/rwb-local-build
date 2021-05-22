@@ -1,0 +1,52 @@
+#!/bin/bash -eu
+
+RWB_SCRIPT_DIR=$(dirname $0)
+. $RWB_SCRIPT_DIR/rwb-functions
+
+PACKAGE_NAME=$(cargo_package_name)
+RWB_VERSION=$(rwb_version)
+
+# This sets the package- and deployment-specific env vars
+. ./rwb-package-config.env
+
+# TODO: Maybe use the hash of the build dir instead of the project dir.  Although this would
+# preclude the possibility of not building it if unnecessary.  Maybe that's not worth it.
+# Could build into a temp dir, then check the hash, and only copy the temp dir in if different.
+BUILD_NAME=$(rwb-hacky-holoversion)
+RWB_CRATE_BUILD_DIR=$RWB_LOCAL_BUILDS_DIR/$PACKAGE_NAME
+BUILD_PATH=$RWB_CRATE_BUILD_DIR/$BUILD_NAME
+OUT_DIR=$RWB_CRATE_BUILD_DIR/$BUILD_NAME/pkg
+
+# Create the version source file before building.
+echo "// Automatically generated. Do not modify! Do not commit into source control!
+// The contents of this file are not subject to the licensing of the tool
+// 'rwb' that generated it, and can be used for any purpose under any license
+// by the user of 'rwb'.
+
+// This is the version of the crate built by rwb.
+pub static VERSION_STR : &str = \"$BUILD_NAME\";
+// This is the version of rwb that was used to build the crate and generate this file.
+pub static RWB_VERSION_STR : &str = \"$RWB_VERSION\";" > $RWB_GENERATED_SOURCE_PATH
+
+if [ -d "$BUILD_PATH" ]; then
+    echo "Local build '$BUILD_NAME' already exists, no need to build it again." 1>&2
+else
+    echo "Locally building '$BUILD_NAME' ..." 1>&2
+    wasm-pack build --target web --out-dir $OUT_DIR
+fi
+
+LOCAL_STATIC_CONTENT_DIR_ABS=$(realpath $RWB_LOCAL_STATIC_CONTENT_DIR)
+
+pushd $BUILD_PATH >/dev/null
+cp -f $LOCAL_STATIC_CONTENT_DIR_ABS/* .
+rollup ./main.js --format iife --file ./pkg/bundle.js
+popd >/dev/null
+
+LATEST_BUILD_LINK_PATH=$RWB_CRATE_BUILD_DIR/latest-build
+
+echo "Setting LOCAL latest-build: $LATEST_BUILD_LINK_PATH -> $BUILD_NAME" 1>&2
+
+rm -f $LATEST_BUILD_LINK_PATH
+ln -s $BUILD_NAME $LATEST_BUILD_LINK_PATH
+
+echo $BUILD_NAME

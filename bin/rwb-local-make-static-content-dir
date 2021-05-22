@@ -1,0 +1,41 @@
+#!/bin/bash -eu
+
+RWB_SCRIPT_DIR=$(dirname $0)
+. $RWB_SCRIPT_DIR/rwb-functions
+
+# This sets the package- and deployment-specific env vars
+. ./rwb-package-config.env
+
+PACKAGE_NAME=$(cargo_package_name)
+
+if [ -e "$RWB_LOCAL_STATIC_CONTENT_DIR" ]; then
+    echo "Error: Local static content dir '$RWB_LOCAL_STATIC_CONTENT_DIR' already exists -- aborting now to avoid overwriting it." 1>&2
+    exit 1
+fi
+
+echo "Generating local static content dir '$RWB_LOCAL_STATIC_CONTENT_DIR' (generally this is a one-time procedure, and then you'll modify the static content in-situ) ..." 1>&2
+
+mkdir -p $RWB_LOCAL_STATIC_CONTENT_DIR
+
+echo "<!doctype html>
+<html lang='en'>
+
+<head>
+    <meta charset='utf-8' />
+    <title>$PACKAGE_NAME</title>
+    <script src='/$PACKAGE_NAME/pkg/bundle.js' defer></script>
+</head>
+
+<body>
+</body>
+
+</html>
+" > $RWB_LOCAL_STATIC_CONTENT_DIR/index.html
+
+echo "import init, { run_app } from './pkg/$PACKAGE_NAME.js';
+async function main() {
+   await init('/$PACKAGE_NAME/pkg/${PACKAGE_NAME}_bg.wasm');
+   run_app();
+}
+main()
+" > $RWB_LOCAL_STATIC_CONTENT_DIR/main.js

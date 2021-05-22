@@ -1,0 +1,55 @@
+#!/bin/bash -eu
+
+RWB_SCRIPT_DIR=$(dirname $0)
+. $RWB_SCRIPT_DIR/rwb-functions
+
+# This sets the package- and deployment-specific env vars
+. ./rwb-package-config.env
+
+if [ $# -ne 1 ]; then
+    echo "Error: Expected usage: $0 <remote-build-name>" 1>&2
+    echo "Here, <remote-build-name> should be an entry in the remote directory $RWB_REMOTE_SSH_HOST:$RWB_REMOTE_BUILDS_DIR (it can be a symlink or regular directory)." 1>&2
+    exit 1
+fi
+
+PACKAGE_NAME=$(cargo_package_name)
+
+BUILD_NAME=$1
+RWB_CRATE_BUILD_DIR=$RWB_LOCAL_BUILDS_DIR/$PACKAGE_NAME
+BUILD_PATH=$RWB_CRATE_BUILD_DIR/$BUILD_NAME
+REAL_BUILD_PATH=$(realpath $BUILD_PATH)
+REAL_BUILD_NAME=$(basename $REAL_BUILD_PATH)
+
+if [ ! -d "$REAL_BUILD_PATH" ]; then
+    echo "Error: Can't set active REMOTE build to '$BUILD_NAME'; expected LOCAL path '$REAL_BUILD_PATH' to exist -- aborting." 1>&2
+    exit 1
+fi
+
+REMOTE_WB_CRATE_BUILD_DIR=$RWB_REMOTE_BUILDS_DIR/$PACKAGE_NAME
+REMOTE_BUILD_PATH=$REMOTE_WB_CRATE_BUILD_DIR/$REAL_BUILD_NAME
+REMOTE_LINK_PATH=$RWB_REMOTE_ROOT_DIR/$PACKAGE_NAME
+
+# Verify that the remote build already exists.  Note that in bash scripts, `test` considers 0 to be true,
+# so REMOTE_BUILD_EXISTS=0 means that the remote build DOES exist.
+REMOTE_BUILD_EXISTS=$(ssh $RWB_REMOTE_SSH_HOST ls $REMOTE_BUILD_PATH &>/dev/null; echo $?)
+if [ $REMOTE_BUILD_EXISTS -ne 0 ]; then
+    echo "Error: Couldn't set remote active build to '$REAL_BUILD_NAME' because remote path $RWB_REMOTE_SSH_HOST:$REMOTE_BUILD_PATH doesn't exist -- aborting." 1>&2
+    exit 1
+fi
+
+echo "Setting REMOTE active build on $RWB_REMOTE_SSH_HOST via ssh: $REMOTE_LINK_PATH -> $REAL_BUILD_NAME" 1>&2
+
+# Now update the link.  Note that f is 'force' but n is necessary too.
+# https://serverfault.com/questions/147787/how-to-update-a-symbolic-link-target-ln-f-s-not-working
+REMOTE_LINK_TARGET=$(ssh $RWB_REMOTE_SSH_HOST realpath --relative-to=$RWB_REMOTE_ROOT_DIR $REMOTE_BUILD_PATH)
+ssh $RWB_REMOTE_SSH_HOST ln -fns $REMOTE_LINK_TARGET $REMOTE_LINK_PATH
+
+# For the URL that the build is being hosted at.
+REMOTE_BUILD_URL=$RWB_REMOTE_WWW_BASE_URL/$PACKAGE_NAME
+
+# Print a convenience link for opening the remote build.
+echo "REMOTE build '$REAL_BUILD_NAME' is now being hosted at:" 1>&2
+echo "" 1>&2
+echo "    $REMOTE_BUILD_URL" 1>&2
+echo "" 1>&2
+echo "This corresponds to LOCAL build '$BUILD_NAME'" 1>&2

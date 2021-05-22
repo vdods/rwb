@@ -1,0 +1,13 @@
+# Not 100% about this since the guidance is murky.
+Cargo.lock
+# As usual for a cargo crate
+target
+
+#
+# The following are from this package's rwb-package-config.env file.
+#
+
+# This should definitely not be committed.
+src/rwb.rs
+# This is where builds are stored locally.
+rwb-builds

@@ -1,0 +1,33 @@
+#!/bin/bash -eu
+
+RWB_SCRIPT_DIR=$(dirname $0)
+. $RWB_SCRIPT_DIR/rwb-functions
+
+# This sets the package- and deployment-specific env vars
+. ./rwb-package-config.env
+
+if [ $# -ne 1 ] || [ "$1" = "active-build" ]; then
+    echo "Error: Expected usage: $0 <local-build-name>" 1>&2
+    echo "Here, <local-build-name> should be an entry in the local '$RWB_LOCAL_BUILDS_DIR' directory (it can be a symlink or regular directory).  Easiest local build name is 'latest-build'.  Obviously you can't specify 'active-build'." 1>&2
+    exit 1
+fi
+
+PACKAGE_NAME=$(cargo_package_name)
+
+BUILD_NAME=$1
+RWB_CRATE_BUILD_DIR=$RWB_LOCAL_BUILDS_DIR/$PACKAGE_NAME
+BUILD_PATH=$RWB_CRATE_BUILD_DIR/$BUILD_NAME
+REAL_BUILD_PATH=$(realpath $BUILD_PATH)
+REAL_BUILD_NAME=$(basename $REAL_BUILD_PATH)
+
+if [ ! -d "$REAL_BUILD_PATH" ]; then
+    echo "Error: Can't set active-build to '$BUILD_NAME'; expected path '$REAL_BUILD_PATH' to exist and be a directory -- aborting." 1>&2
+    exit 1
+fi
+
+ACTIVE_BUILD_LINK_PATH=$RWB_CRATE_BUILD_DIR/active-build
+
+echo "Setting LOCAL active build: $ACTIVE_BUILD_LINK_PATH -> $REAL_BUILD_NAME" 1>&2
+
+rm -f $ACTIVE_BUILD_LINK_PATH
+ln -s $REAL_BUILD_NAME $ACTIVE_BUILD_LINK_PATH

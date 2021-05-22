@@ -1,0 +1,42 @@
+# This file is meant to be executed within a shell in order to have these functions available.
+
+function abort_with_error_message {
+    echo $1 1>&2
+    exit 1
+}
+
+function cargo_package_name {
+    if [ $# -eq 0 ]; then
+        PACKAGE_NAME=$(toml get Cargo.toml package.name)
+    elif [ $# -eq 1 ]; then
+        pushd $1
+        PACKAGE_NAME=$(toml get Cargo.toml package.name)
+        popd
+    else
+        abort_with_error_message "Error: got $# arguments; expected usage: cargo_package_name [crate-root-dir]"
+    fi
+    # https://stackoverflow.com/questions/9733338/shell-script-remove-first-and-last-quote-from-a-variable
+    PACKAGE_NAME="${PACKAGE_NAME%\"}"
+    PACKAGE_NAME="${PACKAGE_NAME#\"}"
+    echo $PACKAGE_NAME
+}
+
+function cargo_package_version {
+    if [ $# -eq 0 ]; then
+        PACKAGE_VERSION=$(toml get Cargo.toml package.version)
+    elif [ $# -eq 1 ]; then
+        pushd $1
+        PACKAGE_VERSION=$(toml get Cargo.toml package.version)
+        popd
+    else
+        abort_with_error_message "Error: got $# arguments; expected usage: cargo_package_version [crate-root-dir]"
+    fi
+    # https://stackoverflow.com/questions/9733338/shell-script-remove-first-and-last-quote-from-a-variable
+    PACKAGE_VERSION="${PACKAGE_VERSION%\"}"
+    PACKAGE_VERSION="${PACKAGE_VERSION#\"}"
+    echo $PACKAGE_VERSION
+}
+
+function rwb_version {
+    echo "0.0.0"
+}
