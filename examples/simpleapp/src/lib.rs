@@ -1,4 +1,4 @@
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 #![allow(non_camel_case_types, unused_attributes)]
 
 // Reference: https://github.com/yewstack/yew textarea example
@@ -116,7 +116,7 @@ impl Component for App {
                         </td>
                     </tr>
                 </table>
-                <div style="font-size:75%" align="center">{ format!("{} built by {} at {}", version_str(), rwb_version_str(), build_timestamp_str()) }</div>
+                <div style="font-size:75%" align="center">{ format!("{} built by ", version_str()) }<a href="https://github.com/vdods/rwb">{ rwb_version_str() }</a>{ format!(" at {}", build_timestamp_str()) }</div>
             </div>
         }
     }

@@ -156,7 +156,12 @@ While building:
 
         fatal: No names found, cannot describe anything.
 
-    then you don't have any version tags in your git repo, which causes minor problems for holoversion.
+    then you don't have any version tags in your git repo, which causes problems for holoversion.
+    You can fix this by adding an annotated tag to the current commit, e.g.
+
+        git tag v1.0.8 -m ""
+
+    See `man git-tag` for more info.
 -   Ignore error messages like
 
         tar: Removing leading `../' from member names
