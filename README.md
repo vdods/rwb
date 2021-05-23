@@ -19,6 +19,7 @@ No guarantees for backward compatibility for now.
 
 |Version|Notes|
 |-------|-----|
+|`v0.1.2`|Minor miscellaneous improvements.|
 |`v0.1.1`|A fix to holoversion.|
 |`v0.1.0`|Improvements to portability of builds regarding location, layout of the build dirs, symmetry between local and remote build dirs, and other general usability improvements.|
 |`v0.0.0`|Initial release.|
