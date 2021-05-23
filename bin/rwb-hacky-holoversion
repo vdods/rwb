@@ -14,7 +14,7 @@ HOLOVERSION=$PACKAGE_NAME-$GIT_DESCRIBE
 
 # Add a hash of the content if the git repo has been modified.
 # 0 means true, nonzero means false (shell script convention).
-IS_MODIFIED=$(echo $GIT_DESCRIBE | fgrep ".modified" | echo "$?")
+IS_MODIFIED=$(echo $GIT_DESCRIBE | fgrep -q ".modified"; echo "$?")
 if [ $IS_MODIFIED -eq 0 ]; then
     # Use the hash.
     # Just take the hex encoded hash value, not the file name.
