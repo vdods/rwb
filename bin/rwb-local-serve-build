@@ -7,30 +7,33 @@ RWB_SCRIPT_DIR=$(dirname $0)
 . ./rwb-package-config.env
 
 PACKAGE_NAME=$(cargo_package_name)
+RWB_CRATE_BUILD_DIR=$RWB_LOCAL_BUILDS_DIR/$PACKAGE_NAME
 
 if [ $# -ne 1 ]; then
     echo "Error: Expected usage: $0 <local-build-name>" 1>&2
-    echo "Here, <local-build-name> should be an entry in the local '$RWB_LOCAL_BUILDS_DIR' directory (it can be a symlink or regular directory).  Easiest local build name is 'latest-build'." 1>&2
+    echo "    <local-build-name> must be an entry in the local '$RWB_CRATE_BUILD_DIR' directory (directories are builds, symlinks are tags).  Easiest <local-build-name> is the tag name 'latest'." 1>&2
     exit 1
 fi
 
 BUILD_NAME=$1
-RWB_CRATE_BUILD_DIR=$RWB_LOCAL_BUILDS_DIR/$PACKAGE_NAME
 BUILD_PATH=$RWB_CRATE_BUILD_DIR/$BUILD_NAME
 
-if [ ! -d "$BUILD_PATH" ]; then
-    echo "Error: Expected path '$BUILD_PATH' to exist and be a directory -- aborting." 1>&2
+if [ ! -e "$BUILD_PATH" ]; then
+    echo "Error: Invalid build '$BUILD_NAME'; expected path '$BUILD_PATH' to exist -- aborting." 1>&2
     exit 1
 fi
 
-# Use of `--tmpdir` causes the temp dir to appear under the system temp dir.
-TEMP_HOST_DIR=$(mktemp --directory $PACKAGE_NAME.XXXXXXXXXX --tmpdir)
-BUILD_PATH_ABS=$(realpath $BUILD_PATH)
-pushd $TEMP_HOST_DIR >/dev/null
-ln -s $BUILD_PATH_ABS $PACKAGE_NAME
-echo "Hosting build '$BUILD_NAME' from temp dir '$TEMP_HOST_DIR' using Python HTTP server:" 1>&2
-echo "" 1>&2
-echo "    http://localhost:$RWB_LOCAL_HOST_BUILD_HTTP_PORT/$PACKAGE_NAME" 1>&2
-echo "" 1>&2
-echo "Hit Ctrl+C to shut down the host and exit." 1>&2
+# For the URL that the build is being hosted at.
+BUILD_URL=http://localhost:$RWB_LOCAL_HOST_BUILD_HTTP_PORT/$PACKAGE_NAME/$BUILD_NAME
+
+pushd $RWB_LOCAL_BUILDS_DIR >/dev/null
+echo "Hosting LOCAL build '$BUILD_NAME' using Python HTTP server from directory '$RWB_LOCAL_BUILDS_DIR'.  The build is located at:" 1>&2
+echo 1>&2
+echo "    $BUILD_PATH" 1>&2
+echo 1>&2
+echo "It is being served at URL:" 1>&2
+echo 1>&2
+echo "    $BUILD_URL" 1>&2
+echo 1>&2
+echo "Hit Ctrl+C to shut down the server and exit." 1>&2
 python3 -m http.server $RWB_LOCAL_HOST_BUILD_HTTP_PORT >/dev/null

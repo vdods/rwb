@@ -1,0 +1,16 @@
+#!/bin/bash -eu
+
+RWB_SCRIPT_DIR=$(dirname $0)
+. $RWB_SCRIPT_DIR/rwb-functions
+
+PACKAGE_NAME=$(cargo_package_name)
+
+# This sets the package- and deployment-specific env vars
+. ./rwb-package-config.env
+
+PACKAGE_BUILD_DIR=$RWB_REMOTE_BUILDS_DIR/$PACKAGE_NAME
+
+echo "REMOTE package-specific build dir is: $RWB_REMOTE_SSH_TARGET:$PACKAGE_BUILD_DIR" 1>&2
+
+# The -t option is to force a TTY connection, so that the --color=yes option and the interactive less command works.
+ssh $RWB_REMOTE_SSH_TARGET -t "ls -alt --color=yes $PACKAGE_BUILD_DIR | less -r"

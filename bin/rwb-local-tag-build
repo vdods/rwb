@@ -1,0 +1,44 @@
+#!/bin/bash -eu
+
+RWB_SCRIPT_DIR=$(dirname $0)
+. $RWB_SCRIPT_DIR/rwb-functions
+
+# This sets the package- and deployment-specific env vars
+. ./rwb-package-config.env
+
+PACKAGE_NAME=$(cargo_package_name)
+RWB_CRATE_BUILD_DIR=$RWB_LOCAL_BUILDS_DIR/$PACKAGE_NAME
+
+if [ $# -ne 2 ]; then
+    echo "Error: Expected usage: $0 <local-build-name> <tag-name>" 1>&2
+    echo 1>&2
+    echo "    <local-build-name> must be an entry in the local '$RWB_CRATE_BUILD_DIR' directory (directories are builds, symlinks are tags).  Easiest <local-build-name> is the tag name 'latest'." 1>&2
+    echo "    <tag-name> is the name of the tag to create." 1>&2
+    echo 1>&2
+    echo "If <local-build-name> is a tag name, then the created tag will point to the target of the <local-build-name> tag." 1>&2
+    echo "Note that if the named tag exists already, the program will unapologetically overwrite it." 1>&2
+    exit 1
+fi
+
+BUILD_NAME=$1
+TAG_NAME=$2
+
+REAL_BUILD_PATH=$(realpath $RWB_CRATE_BUILD_DIR/$BUILD_NAME)
+REAL_BUILD_NAME=$(basename $REAL_BUILD_PATH)
+TAG_PATH=$RWB_CRATE_BUILD_DIR/$TAG_NAME
+
+echo "Attempting to set LOCAL tag: $TAG_NAME -> $REAL_BUILD_NAME" 1>&2
+
+pushd $(dirname $REAL_BUILD_PATH) >/dev/null
+if [ -e $TAG_NAME ] && [ ! -L $TAG_NAME ]; then
+    echo "Error: Tag name '$TAG_NAME' is a directory; can't create it as a symlink -- aborting."
+    exit 1
+fi
+rm -f $TAG_NAME
+ln -s $REAL_BUILD_NAME $TAG_NAME
+popd >/dev/null
+
+echo "The LOCAL tag is located at:" 1>&2
+echo 1>&2
+echo "    $TAG_PATH" 1>&2
+echo 1>&2

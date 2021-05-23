@@ -8,10 +8,9 @@ RWB_SCRIPT_DIR=$(dirname $0)
 
 PACKAGE_NAME=$(cargo_package_name)
 
-DATE=$(date +%Y.%m.%d.%H:%M:%S)
-GIT_DESCRIBE=$(git describe --all --long --dirty=-modified | egrep -o "[^/]*$")
+GIT_DESCRIBE=$(git describe --tags --long --dirty=.modified)
 
-HOLOVERSION=$PACKAGE_NAME-$GIT_DESCRIBE-$DATE
+HOLOVERSION=$PACKAGE_NAME-$GIT_DESCRIBE
 
 # Add a hash of the content if the git repo has been modified.
 # 0 means true, nonzero means false (shell script convention).
@@ -21,10 +20,13 @@ if [ $IS_MODIFIED -eq 0 ]; then
     # Just take the hex encoded hash value, not the file name.
     if [ "$(echo $RWB_CRATE_IS_INSIDE_CARGO_WORKSPACE | tr '[:upper:]' '[:lower:]')" = "true" ]; then
         # Note that ../Cargo.lock is included so that any updates to workspace dependencies affect the hash.
-        HASH=$(tar c --exclude=.git --exclude=$RWB_LOCAL_BUILDS_DIR --exclude=$RWB_GENERATED_SOURCE_PATH . ../Cargo.lock | sha256sum | egrep -o "^[a-fA-F0-9]*")
+        SHA256SUM=$(tar -c --exclude=.git --exclude=target --exclude=$RWB_LOCAL_BUILDS_DIR --exclude=$RWB_GENERATED_SOURCE_PATH . ../Cargo.lock | sha256sum)
     else
-        HASH=$(tar c --exclude=.git --exclude=$RWB_LOCAL_BUILDS_DIR --exclude=$RWB_GENERATED_SOURCE_PATH . | sha256sum | egrep -o "^[a-fA-F0-9]*")
+        SHA256SUM=$(tar -c --exclude=.git --exclude=target --exclude=$RWB_LOCAL_BUILDS_DIR --exclude=$RWB_GENERATED_SOURCE_PATH . | sha256sum)
     fi
+    # xxd is a hex-to-binary converter CLI utility.  base32 does base32 encoding.  The tr part
+    # strips off the '=' padding chars.
+    HASH=$(echo -n $SHA256SUM | egrep -o "^[a-fA-F0-9]*" | xxd -r -p | base32 | tr -d '=')
     HOLOVERSION=$HOLOVERSION-$HASH
 fi
 

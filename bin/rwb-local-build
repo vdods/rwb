@@ -4,7 +4,7 @@ RWB_SCRIPT_DIR=$(dirname $0)
 . $RWB_SCRIPT_DIR/rwb-functions
 
 PACKAGE_NAME=$(cargo_package_name)
-RWB_VERSION=$(rwb_version)
+RWB_VERSION_STRING=$(rwb_version_string)
 
 # This sets the package- and deployment-specific env vars
 . ./rwb-package-config.env
@@ -17,6 +17,8 @@ RWB_CRATE_BUILD_DIR=$RWB_LOCAL_BUILDS_DIR/$PACKAGE_NAME
 BUILD_PATH=$RWB_CRATE_BUILD_DIR/$BUILD_NAME
 OUT_DIR=$RWB_CRATE_BUILD_DIR/$BUILD_NAME/pkg
 
+TIMESTAMP=$(date +%Y.%m.%d-%H:%M:%S)
+
 # Create the version source file before building.
 echo "// Automatically generated. Do not modify! Do not commit into source control!
 // The contents of this file are not subject to the licensing of the tool
@@ -25,28 +27,28 @@ echo "// Automatically generated. Do not modify! Do not commit into source contr
 
 // This is the version of the crate built by rwb.
 pub static VERSION_STR : &str = \"$BUILD_NAME\";
+// This is the timestamp at the time of build by rwb.
+pub static BUILD_TIMESTAMP_STR : &str = \"$TIMESTAMP\";
 // This is the version of rwb that was used to build the crate and generate this file.
-pub static RWB_VERSION_STR : &str = \"$RWB_VERSION\";" > $RWB_GENERATED_SOURCE_PATH
+pub static RWB_VERSION_STR : &str = \"$RWB_VERSION_STRING\";" > $RWB_GENERATED_SOURCE_PATH
 
 if [ -d "$BUILD_PATH" ]; then
-    echo "Local build '$BUILD_NAME' already exists, no need to build it again." 1>&2
+    echo "LOCAL build '$BUILD_NAME' already exists, no need to build it again." 1>&2
 else
     echo "Locally building '$BUILD_NAME' ..." 1>&2
     wasm-pack build --target web --out-dir $OUT_DIR
+
+    LOCAL_STATIC_CONTENT_DIR_ABS=$(realpath $RWB_LOCAL_STATIC_CONTENT_DIR)
+
+    pushd $BUILD_PATH >/dev/null
+    cp -f $LOCAL_STATIC_CONTENT_DIR_ABS/* .
+    rollup ./main.js --format iife --file ./pkg/bundle.js
+    popd >/dev/null
 fi
 
-LOCAL_STATIC_CONTENT_DIR_ABS=$(realpath $RWB_LOCAL_STATIC_CONTENT_DIR)
+echo "The LOCAL build is located at:" 1>&2
+echo 1>&2
+echo "    $BUILD_PATH" 1>&2
+echo 1>&2
 
-pushd $BUILD_PATH >/dev/null
-cp -f $LOCAL_STATIC_CONTENT_DIR_ABS/* .
-rollup ./main.js --format iife --file ./pkg/bundle.js
-popd >/dev/null
-
-LATEST_BUILD_LINK_PATH=$RWB_CRATE_BUILD_DIR/latest-build
-
-echo "Setting LOCAL latest-build: $LATEST_BUILD_LINK_PATH -> $BUILD_NAME" 1>&2
-
-rm -f $LATEST_BUILD_LINK_PATH
-ln -s $BUILD_NAME $LATEST_BUILD_LINK_PATH
-
-echo $BUILD_NAME
+rwb-local-tag-build $BUILD_NAME latest

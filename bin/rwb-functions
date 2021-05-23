@@ -9,9 +9,9 @@ function cargo_package_name {
     if [ $# -eq 0 ]; then
         PACKAGE_NAME=$(toml get Cargo.toml package.name)
     elif [ $# -eq 1 ]; then
-        pushd $1
+        pushd $1 >/dev/null
         PACKAGE_NAME=$(toml get Cargo.toml package.name)
-        popd
+        popd >/dev/null
     else
         abort_with_error_message "Error: got $# arguments; expected usage: cargo_package_name [crate-root-dir]"
     fi
@@ -21,6 +21,6 @@ function cargo_package_name {
     echo $PACKAGE_NAME
 }
 
-function rwb_version {
-    echo "0.0.0"
+function rwb_version_string {
+    echo "rwb-v0.1.0"
 }

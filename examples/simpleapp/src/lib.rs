@@ -13,10 +13,32 @@ fn version_str () -> &'static str {
     return rwb::VERSION_STR;
 }
 
+#[cfg(target_arch = "wasm32")]
+fn build_timestamp_str () -> &'static str {
+    return rwb::BUILD_TIMESTAMP_STR;
+}
+
+#[cfg(target_arch = "wasm32")]
+fn rwb_version_str () -> &'static str {
+    return rwb::RWB_VERSION_STR;
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 fn version_str () -> &'static str {
     // TODO: Figure out how to do this.  Cargo probably has a way.
     return "X.Y.Z";
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn build_timestamp_str () -> &'static str {
+    // TODO: Figure out how to do this.  Cargo probably has a way.
+    return "YYYY.MM.DD-hh:mm:ss";
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn rwb_version_str () -> &'static str {
+    // TODO: This doesn't apply.  Figure out just what to do.
+    return "rwb-vX.X.X";
 }
 
 pub struct App {
@@ -94,7 +116,7 @@ impl Component for App {
                         </td>
                     </tr>
                 </table>
-                <div style="font-size:75%" align="center">{ version_str() }</div>
+                <div style="font-size:75%" align="center">{ format!("{} built by {} at {}", version_str(), rwb_version_str(), build_timestamp_str()) }</div>
             </div>
         }
     }

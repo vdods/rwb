@@ -8,7 +8,7 @@ For instructions on building, deploying, and serving, see the [README.md](../../
 For the impatient, to build and serve the app locally, from this project dir, run:
 
     export PATH=$PATH:<path/to/rwb/bin>
-    rwb-local-build && rwb-local-serve-build latest-build
+    rwb-local-build && rwb-local-serve-build latest
 
 This will print a URL which you can open to use the app.  Note that you have to fill in `<path/to/rwb/bin>`
 with the path specific to your system, don't just copy and paste.

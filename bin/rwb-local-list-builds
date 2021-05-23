@@ -1,0 +1,15 @@
+#!/bin/bash -eu
+
+RWB_SCRIPT_DIR=$(dirname $0)
+. $RWB_SCRIPT_DIR/rwb-functions
+
+PACKAGE_NAME=$(cargo_package_name)
+
+# This sets the package- and deployment-specific env vars
+. ./rwb-package-config.env
+
+PACKAGE_BUILD_DIR=$RWB_LOCAL_BUILDS_DIR/$PACKAGE_NAME
+
+echo "LOCAL package-specific build dir is: $PACKAGE_BUILD_DIR" 1>&2
+
+ls -alt --color=yes $RWB_LOCAL_BUILDS_DIR/$PACKAGE_NAME | less -r

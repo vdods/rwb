@@ -23,7 +23,7 @@ echo "<!doctype html>
 <head>
     <meta charset='utf-8' />
     <title>$PACKAGE_NAME</title>
-    <script src='/$PACKAGE_NAME/pkg/bundle.js' defer></script>
+    <script src='./pkg/bundle.js' defer></script>
 </head>
 
 <body>
@@ -34,7 +34,7 @@ echo "<!doctype html>
 
 echo "import init, { run_app } from './pkg/$PACKAGE_NAME.js';
 async function main() {
-   await init('/$PACKAGE_NAME/pkg/${PACKAGE_NAME}_bg.wasm');
+   await init('./pkg/${PACKAGE_NAME}_bg.wasm');
    run_app();
 }
 main()

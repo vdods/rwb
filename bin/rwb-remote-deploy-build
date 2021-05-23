@@ -1,0 +1,94 @@
+#!/bin/bash -eu
+
+RWB_SCRIPT_DIR=$(dirname $0)
+. $RWB_SCRIPT_DIR/rwb-functions
+
+# This sets the package- and deployment-specific env vars
+. ./rwb-package-config.env
+
+if [ $# -ne 1 ]; then
+    echo "Error: Expected usage: $0 <local-build-name>" 1>&2
+    echo "Here, <local-build-name> should be an entry in the local '$RWB_LOCAL_BUILDS_DIR' directory (it can be a symlink or regular directory).  Easiest local build name is 'latest'." 1>&2
+    exit 1
+fi
+
+PACKAGE_NAME=$(cargo_package_name)
+
+BUILD_NAME=$1
+RWB_CRATE_BUILD_DIR=$RWB_LOCAL_BUILDS_DIR/$PACKAGE_NAME
+BUILD_PATH=$RWB_CRATE_BUILD_DIR/$BUILD_NAME
+REAL_BUILD_PATH=$(realpath $BUILD_PATH)
+REAL_BUILD_NAME=$(basename $REAL_BUILD_PATH)
+
+if [ ! -d "$REAL_BUILD_PATH" ]; then
+    echo "Error: Can't deploy build '$BUILD_NAME'; expected path '$REAL_BUILD_PATH' to exist and be a directory -- aborting." 1>&2
+    exit 1
+fi
+
+REMOTE_WB_CRATE_BUILD_DIR=$RWB_REMOTE_BUILDS_DIR/$PACKAGE_NAME
+REMOTE_BUILD_PATH=$REMOTE_WB_CRATE_BUILD_DIR/$BUILD_NAME
+REMOTE_REAL_BUILD_PATH=$REMOTE_WB_CRATE_BUILD_DIR/$REAL_BUILD_NAME
+
+echo "Attempting to deploy LOCAL build '$REAL_BUILD_NAME' via ssh to '$RWB_REMOTE_SSH_TARGET' ..." 1>&2
+
+# Ensure the builds dir exists.
+ssh $RWB_REMOTE_SSH_TARGET mkdir -p $REMOTE_WB_CRATE_BUILD_DIR
+
+echo "Checking if REMOTE build '$REAL_BUILD_NAME' already exists on '$RWB_REMOTE_SSH_TARGET' ..." 1>&2
+
+# If the build doesn't exist, copy it into place via ssh.  Note that in bash scripts, `test` considers 0 to be true,
+# so REMOTE_BUILD_EXISTS=0 means that the remote build DOES exist.
+REMOTE_BUILD_EXISTS=$(ssh $RWB_REMOTE_SSH_TARGET ls $REMOTE_REAL_BUILD_PATH &>/dev/null; echo $?)
+if [ $REMOTE_BUILD_EXISTS -eq 0 ]; then
+    echo "REMOTE build '$REAL_BUILD_NAME' already exists on '$RWB_REMOTE_SSH_TARGET'." 1>&2
+else
+    echo "Copying LOCAL build '$REAL_BUILD_NAME' via ssh to '$RWB_REMOTE_SSH_TARGET' ..." 1>&2
+    # This is a fancy way to copy stuff while preserving symlinks.
+    pushd $(dirname $REAL_BUILD_PATH) >/dev/null
+    # Copy the build into place
+    tar -c $REAL_BUILD_NAME | bzip2 | ssh $RWB_REMOTE_SSH_TARGET "bunzip2 | tar --atime-preserve -xC $REMOTE_WB_CRATE_BUILD_DIR"
+    popd >/dev/null
+    # Just verify that it exists now.
+    ssh $RWB_REMOTE_SSH_TARGET ls $REMOTE_REAL_BUILD_PATH &>/dev/null
+fi
+
+# For the URL that the build is being hosted at.
+REMOTE_BUILD_URL=$RWB_REMOTE_WWW_BASE_URL/$(ssh $RWB_REMOTE_SSH_TARGET "realpath --relative-to=$RWB_REMOTE_ROOT_DIR $RWB_REMOTE_BUILDS_DIR")/$PACKAGE_NAME/$REAL_BUILD_NAME
+
+echo "REMOTE build '$REAL_BUILD_NAME' has been deployed.  The build is located at:" 1>&2
+echo 1>&2
+echo "    $RWB_REMOTE_SSH_TARGET:$REMOTE_REAL_BUILD_PATH" 1>&2
+echo 1>&2
+echo "It is being served at URL:" 1>&2
+echo 1>&2
+echo "    $REMOTE_BUILD_URL" 1>&2
+echo 1>&2
+
+#
+# Now check if the local build is actually a tag, and then copy that too.
+#
+
+if [ -L $BUILD_PATH ]; then
+    echo "Copying LOCAL tag '$BUILD_NAME' via ssh to '$RWB_REMOTE_SSH_TARGET' ..." 1>&2
+    # This is a fancy way to copy stuff while preserving symlinks.
+    pushd $(dirname $BUILD_PATH) >/dev/null
+    # Copy the symlink tag
+    tar -c $BUILD_NAME | bzip2 | ssh $RWB_REMOTE_SSH_TARGET "bunzip2 | tar --atime-preserve -xC $REMOTE_WB_CRATE_BUILD_DIR"
+    popd >/dev/null
+    # Just verify that it exists now.
+    ssh $RWB_REMOTE_SSH_TARGET ls $REMOTE_BUILD_PATH &>/dev/null
+    echo "LOCAL tag '$BUILD_NAME' has been deployed to '$RWB_REMOTE_SSH_TARGET'." 1>&2
+
+    # For the URL that the tag is being hosted at.
+    REMOTE_TAG_URL=$RWB_REMOTE_WWW_BASE_URL/$(ssh $RWB_REMOTE_SSH_TARGET "realpath --relative-to=$RWB_REMOTE_ROOT_DIR $RWB_REMOTE_BUILDS_DIR")/$PACKAGE_NAME/$BUILD_NAME
+
+    echo "REMOTE tag '$BUILD_NAME' has been deployed.  The tag is located at:" 1>&2
+    echo 1>&2
+    echo "    $RWB_REMOTE_SSH_TARGET:$REMOTE_BUILD_PATH" 1>&2
+    echo 1>&2
+    echo "It is being served at URL:" 1>&2
+    echo 1>&2
+    echo "    $REMOTE_TAG_URL" 1>&2
+    echo 1>&2
+fi
+
