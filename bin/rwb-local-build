@@ -35,8 +35,10 @@ pub static RWB_VERSION_STR : &str = \"$RWB_VERSION_STRING\";" > $RWB_GENERATED_S
 if [ -d "$BUILD_PATH" ]; then
     echo "LOCAL build '$BUILD_NAME' already exists, no need to build it again." 1>&2
 else
-    echo "Locally building '$BUILD_NAME' ..." 1>&2
+    echo "Locally building RELEASE BUILD of '$BUILD_NAME' ..." 1>&2
     wasm-pack build --target web --out-dir $OUT_DIR
+#     echo "Locally building DEBUG BUILD of '$BUILD_NAME' ..." 1>&2
+#     wasm-pack build --dev --target web --out-dir $OUT_DIR
 
     LOCAL_STATIC_CONTENT_DIR_ABS=$(realpath $RWB_LOCAL_STATIC_CONTENT_DIR)
 

@@ -8,7 +8,8 @@ as a wasm target, then write the UI as HTML and JS which uses an interface to th
 use [yew](https://github.com/yewstack/yew) to do this Rust <-> HTML/JS binding.
 
 This utility is just a simple thing for a simple build and deployment context, and isn't meant to do more.
-There probably exist "real" tools that do this sort of thing better and more intelligently.
+There probably exist "real" tools that do this sort of thing better and more intelligently (maybe
+[trunk](https://lib.rs/crates/trunk)?).
 
 Ideally the shell scripts would be replaced by a single Rust-based CLI tool that can be installed via
 cargo install and not require any external CLI tools, but for now, whateva.
@@ -19,6 +20,7 @@ No guarantees for backward compatibility for now.
 
 |Version|Notes|
 |-------|-----|
+|`v0.2.0`|Separated package config and build/deploy config, so that build/deploy config can be done as global env vars.|
 |`v0.1.2`|Minor miscellaneous improvements.|
 |`v0.1.1`|A fix to holoversion.|
 |`v0.1.0`|Improvements to portability of builds regarding location, layout of the build dirs, symmetry between local and remote build dirs, and other general usability improvements.|
@@ -53,7 +55,18 @@ in order to remotely deploy and serve, you'll have to specify values for the `RW
 
 You'll need a cargo crate (which can be part of a cargo
 workspace) that has a file `rwb-package-config.env` in it which defines your project-specific `rwb` configuration.
-See the comments in that file in the example for what everything should be.
+A default such file can be created by running the `rwb-local-make-package-config` script in the project root,
+and then edited appropriately.  See the comments in that file for what everything should be.
+
+You'll also need have definitions for build/deploy env vars.  A template env var file can be made by running
+the `rwb-build-deploy-config` script in your user home directory, editing the generated file `rwb-build-deploy-config.env`
+appropriately, and then adding the line
+
+    . rwb-build-deploy-config.env
+
+to your user's `.profile` file, so that those env vars are set upon login.  These assume a default configuation
+where there's a single build dir for all rwb-using projects, instead of building into a subdirectory of each
+project.  See the comments in that file for what everything should be.
 
 ## Building and Deploying using `rwb`
 
@@ -182,6 +195,16 @@ While building:
 -   Figure out correct usage of terms 'crate' and 'package' in various places.  It's not clear what the
     distinction is, especially when in the context of a cargo workspace.
 -   Is there a way to do this using cargo build processes?  I don't really know, I'm a relative Rust noob.
+-   Make an example that uses [seed](https://github.com/seed-rs/seed).
+-   Also looks cool and worth using in an example: [spair](https://lib.rs/crates/spair).
+-   Would it make sense to somehow incorporate holoversion into `main.js` and `index.html`?  This would
+    be to have discoverable and un-mix-up-able builds.
+-   Better organization of rwb-package-config.env
+    -   Done: Most of these vars (`RWB_LOCAL_*` and `RWB_REMOTE_*`) belong outside of source control.
+        Put them in a config `~/.rwb/config.toml` or some such.
+    -   The remaining vars are `RWB_CRATE_IS_INSIDE_CARGO_WORKSPACE` and `RWB_GENERATED_SOURCE_PATH` and
+        those could simply be in a `rwb-config.toml` file inside the crate dir.
+-   Figure out how to build debug/release using appropriate levers in Cargo.
 
 ## License
 

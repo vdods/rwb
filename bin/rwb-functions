@@ -22,5 +22,5 @@ function cargo_package_name {
 }
 
 function rwb_version_string {
-    echo "rwb-v0.1.2"
+    echo "rwb-v0.2.0"
 }

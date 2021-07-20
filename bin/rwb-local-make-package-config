@@ -1,4 +1,11 @@
-# This file defines the package- and deployment-specific env vars, used in the other scripts.
+#!/bin/bash -eu
+
+if [ -e rwb-package-config.env ]; then
+    echo "Error: rwb-package-config.env file already exists -- aborting now to avoid overwriting it." 1>&2
+    exit 1
+fi
+
+echo "# This file defines the package-specific env vars, used in the other scripts.
 # This should be run directly in an existing shell, not a subshell (though you, dear user,
 # shouldn't have to invoke this directly).
 
@@ -11,31 +18,35 @@ export RWB_CRATE_IS_INSIDE_CARGO_WORKSPACE=false
 # it's not needed for non-wasm builds.  It should NOT be committed to source control.
 # This will also be ignored by rwb-hacky-holoversion in computing the hash (since the
 # holoversion goes into generating this file).
-export RWB_GENERATED_SOURCE_PATH="src/rwb.rs"
+export RWB_GENERATED_SOURCE_PATH='src/rwb.rs'
 
 # This must specify the dir inside this crate the static content should be generated to.
 export RWB_LOCAL_STATIC_CONTENT_DIR=static
 
-# NOTE: The following stuff really belongs in a separate rwb-build-deploy-config.env file;
-# see rwb-local-make-build-deploy-config.  In that case, that file probably wouldn't reside
-# within the git repo.
+#
+# The following may be uncommented as project-specific overrides to any globally-defined defaults
+# (see rwb-local-make-build-deploy-config script).
+#
 
 # This must specify where the named rwb crate subdirs will go, one for each crate.  Under each of those is the
 # versioned build dirs themselves.  Specifying a relative path here will create the builds under this project's
 # root dir.  Another sensible choice is a single absolute path that will contain all builds for all projects,
 # e.g. to have a persistent library of builds, and not have them clog up this project root dir.
-export RWB_LOCAL_BUILDS_DIR=~/rwb-builds
+#export RWB_LOCAL_BUILDS_DIR=rwb-builds
 # This must specify the port that will be used when hosting builds on the localhost server.  This could be
 # specified on a per-project basis in case it was necessary to use separate HTTP servers for each build.
-export RWB_LOCAL_HOST_BUILD_HTTP_PORT=8080
+#export RWB_LOCAL_HOST_BUILD_HTTP_PORT=8080
 
 # This must specify the target host for deploying builds via ssh.
-export RWB_REMOTE_SSH_TARGET=username@hostname
+#export RWB_REMOTE_SSH_TARGET=username@hostname
 # This must specify the base URL for the WWW server, corresponding to the root content dir, for
 # constructing the convenience link upon running rwb-remote-set-active-build -- it SHOULD NOT
 # end with a / character.
-export RWB_REMOTE_WWW_BASE_URL=https://www.host.com
+#export RWB_REMOTE_WWW_BASE_URL=https://www.host.com
 # This must specify the root content dir for the web server that will host the build.
-export RWB_REMOTE_ROOT_DIR=/var/www/html
+#export RWB_REMOTE_ROOT_DIR=/var/www/html
 # This must specify where the named rwb crate subdirs will go, one for each crate, on the remote server.
-export RWB_REMOTE_BUILDS_DIR=$RWB_REMOTE_ROOT_DIR/rwb-builds
+#export RWB_REMOTE_BUILDS_DIR=\$RWB_REMOTE_ROOT_DIR/rwb-builds
+" > rwb-package-config.env
+
+echo "Successfully wrote to rwb-package-config.env"
