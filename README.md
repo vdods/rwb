@@ -20,6 +20,7 @@ No guarantees for backward compatibility for now.
 
 |Version|Notes|
 |-------|-----|
+|`v0.2.1`|Added a couple of examples from the [`three-d`](https://github.com/asny/three-d) crate which build and deploy to desktop and wasm.|
 |`v0.2.0`|Separated package config and build/deploy config, so that build/deploy config can be done as global env vars.|
 |`v0.1.2`|Minor miscellaneous improvements.|
 |`v0.1.1`|A fix to holoversion.|
@@ -148,6 +149,13 @@ From within your project root dir (e.g. in `rwb/examples/simpleapp`), run
 This is self-explanatory.  This will start an interactive `less` process, showing the time-ordered
 builds, ordered from newest to oldest.  The difference here is that this is done over `ssh`.
 
+## Examples
+
+Apps that build and deploy using `rwb` are given under the `examples` subdir.  The examples `triangle`
+and `mandelbrot` are slight modifications of the respective examples from the
+[`three-d`](https://github.com/asny/three-d) crate (an OpenGL-based graphics library that builds to
+desktop and wasm), and they have their own `LICENSE` files (MIT License).
+
 ## Notes
 
 In order for a build to have a reasonable holoversion, such as
@@ -205,6 +213,9 @@ While building:
     -   The remaining vars are `RWB_CRATE_IS_INSIDE_CARGO_WORKSPACE` and `RWB_GENERATED_SOURCE_PATH` and
         those could simply be in a `rwb-config.toml` file inside the crate dir.
 -   Figure out how to build debug/release using appropriate levers in Cargo.
+-   See if there's a way to include the content of `rwb.rs` as data instead of as source, since the
+    rwb build process ideally should not affect the content of the source code.  Or at least think
+    about this more.  It seems a little hacky as is.
 
 ## License
 
